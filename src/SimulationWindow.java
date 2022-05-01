@@ -2,18 +2,39 @@ import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import javax.swing.*;
+import javax.swing.Timer;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class SimulationWindow {
 
 	private JFrame frame;
+	private Timer timer;
+	private int second;
+	private static int battery_charge;
+	public static String reason_to_stop;
 
+	// reasons	
+	public static String none_reason = "None";
+	public static String crash_reason = "Crash";
+	public static String target_reason = "reached the target";
+	public static String battery_reason = "the battery is low";
 	public static void main(String[] args) {
+		battery_charge = 100;
+		reason_to_stop = none_reason;
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
 					SimulationWindow window = new SimulationWindow();
 					window.frame.setVisible(true);
+					
+					// Timer
+					window.second = 0;
+					window.simpleTimer();
+					window.timer.start();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -28,22 +49,23 @@ public class SimulationWindow {
 	public static JLabel info_label;
 	public static boolean return_home = false;
 	boolean toogleStop = true;
+	
+	static JButton returnBtn = new JButton("Return Home");
+	static JButton armBtn = new JButton("Arm/Disarm");
+	static JButton stopBtn = new JButton("Play/Pause");
+	
 	private void initialize() {
 		frame = new JFrame();
-		frame.setSize(1800,700);
+		frame.setSize(1800,760);
 		frame.setTitle("Drone Simulator");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
 		
 		
-		
 		/*
 		 * Stop\Resume
 		 */
-	
-		JButton stopBtn = new JButton("Start/Pause");
-		stopBtn.addActionListener(new ActionListener()
-		{
+		stopBtn.addActionListener(new ActionListener(){
 			  public void actionPerformed(ActionEvent e)
 			  {
 				  if(toogleStop) {
@@ -54,229 +76,124 @@ public class SimulationWindow {
 				  toogleStop = !toogleStop;
 			  }
 		});
-		stopBtn.setBounds(1300, 0, 170, 50);
+		stopBtn.setBounds(1450, 10, 120, 50);
 		frame.getContentPane().add(stopBtn);
-		/*
-		 * Speeds
-		 */
-		
-		
-		JButton speedBtn1 = new JButton("speedUp");
-		speedBtn1.addActionListener(new ActionListener()
-		{
-			  public void actionPerformed(ActionEvent e)
-			  {
-				  algo1.speedUp();
-			  }
-		});
-		speedBtn1.setBounds(1300, 100, 100, 50);
-		frame.getContentPane().add(speedBtn1);
-		
-		JButton speedBtn2 = new JButton("speedDown");
-		speedBtn2.addActionListener(new ActionListener()
-		{
-			  public void actionPerformed(ActionEvent e)
-			  {
-				  algo1.speedDown();
-			  }
-		});
-		speedBtn2.setBounds(1400, 100, 100, 50);
-		frame.getContentPane().add(speedBtn2);
 		
 		/*
-		 * Spins
+		 * Arm / Disarm
 		 */
-		
-		JButton spinBtn1 = new JButton("spin180");
-		spinBtn1.addActionListener(new ActionListener()
-		{
-			  public void actionPerformed(ActionEvent e)
-			  {
-				  algo1.spinBy(180);
+		armBtn.addActionListener(new ActionListener(){
+			  public void actionPerformed(ActionEvent e){
+				  disabledButtons();
+				  Drone.ArmDisarm();
 			  }
 		});
-		spinBtn1.setBounds(1300, 200, 100, 50);
-		frame.getContentPane().add(spinBtn1);
-		
-		JButton spinBtn2 = new JButton("spin90");
-		spinBtn2.addActionListener(new ActionListener()
-		{
-			  public void actionPerformed(ActionEvent e)
-			  {
-				  algo1.spinBy(90);
-			  }
-		});
-		spinBtn2.setBounds(1400, 200, 100, 50);
-		frame.getContentPane().add(spinBtn2);
-		
-		JButton spinBtn3 = new JButton("spin60");
-		spinBtn3.addActionListener(new ActionListener()
-		{
-			  public void actionPerformed(ActionEvent e)
-			  {
-				  algo1.spinBy(60);
-			  }
-		});
-		spinBtn3.setBounds(1500, 200, 100, 50);
-		frame.getContentPane().add(spinBtn3);
-		
-		JButton spinBtn4 = new JButton("spin45");
-		spinBtn4.addActionListener(new ActionListener()
-		{
-			  public void actionPerformed(ActionEvent e)
-			  {
-				  algo1.spinBy(60);
-			  }
-		});
-		spinBtn4.setBounds(1300, 300, 100, 50);
-		frame.getContentPane().add(spinBtn4);
-		
-		JButton spinBtn5 = new JButton("spin30");
-		spinBtn5.addActionListener(new ActionListener()
-		{
-			  public void actionPerformed(ActionEvent e)
-			  {
-				  algo1.spinBy(30);
-			  }
-		});
-		spinBtn5.setBounds(1400, 300, 100, 50);
-		frame.getContentPane().add(spinBtn5);
-		
-		JButton spinBtn6 = new JButton("spin-30");
-		spinBtn6.addActionListener(new ActionListener()
-		{
-			  public void actionPerformed(ActionEvent e)
-			  {
-				  algo1.spinBy(-30);
-			  }
-		});
-		spinBtn6.setBounds(1500, 300, 100, 50);
-		frame.getContentPane().add(spinBtn6);
-		
-		JButton spinBtn7 = new JButton("spin-45");
-		spinBtn7.addActionListener(new ActionListener()
-		{
-			  public void actionPerformed(ActionEvent e)
-			  {
-				  algo1.spinBy(-45);
-			  }
-		});
-		spinBtn7.setBounds(1600, 300, 100, 50);
-		frame.getContentPane().add(spinBtn7);
-		
-		JButton spinBtn8 = new JButton("spin-60");
-		spinBtn8.addActionListener(new ActionListener()
-		{
-			  public void actionPerformed(ActionEvent e)
-			  {
-				  algo1.spinBy(-60);
-			  }
-		});
-		spinBtn8.setBounds(1700, 300, 100, 50);
-		frame.getContentPane().add(spinBtn8);
+		armBtn.setBounds(1600, 10, 120, 50);
+		frame.getContentPane().add(armBtn);
 		
 		/*
 		 * Toogle real map
 		 */
-		
 		JButton toogleMapBtn = new JButton("toogle Map");
-		toogleMapBtn.addActionListener(new ActionListener()
-		{
-			  public void actionPerformed(ActionEvent e)
-			  {
+		toogleMapBtn.addActionListener(new ActionListener(){
+			  public void actionPerformed(ActionEvent e){
 				  toogleRealMap = !toogleRealMap;
 			  }
 		});
-		toogleMapBtn.setBounds(1300, 400, 120, 50);
+		toogleMapBtn.setBounds(1450, 100, 120, 50);
 		frame.getContentPane().add(toogleMapBtn);
 		
 		/*
-		 * Toogle AI
+		 * Open Graph
 		 */
-		
-		JButton toogleAIBtn = new JButton("toogle AI");
-		toogleAIBtn.addActionListener(new ActionListener()
-		{
-			  public void actionPerformed(ActionEvent e)
-			  {
-				  toogleAI = !toogleAI;
+		JButton Graph = new JButton("Open Graph");
+		Graph.addActionListener(new ActionListener(){
+			  public void actionPerformed(ActionEvent e){
+				  algo1.mGraph.drawGraph();
 			  }
 		});
-		toogleAIBtn.setBounds(1400, 400, 120, 50);
-		frame.getContentPane().add(toogleAIBtn);
+		Graph.setBounds(1600, 100, 120, 50);
+		frame.getContentPane().add(Graph);
 		
 		/*
 		 * RETURN TO HOME
 		 */
-		
-
-		JButton returnBtn = new JButton("Return Home");
 		returnBtn.addActionListener(new ActionListener()
 		{
-			  public void actionPerformed(ActionEvent e)
-			  {
+			  public void actionPerformed(ActionEvent e){
 				  return_home = !return_home;
+				  returnBtn.setEnabled(false);
+				  algo1.flightStop();
 				  algo1.speedDown();
 				  algo1.spinBy(180, true, new Func() {
 						@Override
 						public void method() {
+							algo1.calculateAngle();
+							algo1.flightStart();
 							algo1.speedUp();
 						}
-					});
+				  });
 			  }
 		});
-		returnBtn.setBounds(1500, 400, 120, 50);
+		returnBtn.setBounds(1450, 200, 120, 50);
 		frame.getContentPane().add(returnBtn);
 		
-		JButton Graph = new JButton("Open Graph");
-		Graph.addActionListener(new ActionListener()
-		{
-			  public void actionPerformed(ActionEvent e)
-			  {
-				  algo1.mGraph.drawGraph();
-			  }
-		});
-		Graph.setBounds(1600, 400, 120, 50);
-		frame.getContentPane().add(Graph);
 		
 		/*
 		 * Info label 
 		 */
-		
-		
 		info_label = new JLabel();
-		info_label.setBounds(1300, 500, 300, 200);
+		info_label.setBounds(1450, 350, 300, 200);
 		frame.getContentPane().add(info_label);
 		
 		/*
 		 * Info label 
 		 */
-		
-		
 		info_label2 = new JLabel();
-		info_label2.setBounds(1400, 450, 300, 200);
+		info_label2.setBounds(1450, 250, 300, 200);
 		frame.getContentPane().add(info_label2);
 		
 		main();
 	}
+	
 	public JLabel info_label2;
 	public static boolean toogleRealMap = true;
-	public static boolean toogleAI = false;
 	
 	public static AutoAlgo1 algo1;
 	
 	
 	public void main() {
+		final String regex = "(\\d+)";
+		final Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+		JFileChooser chooser = new JFileChooser();
+		FileNameExtensionFilter filter = new FileNameExtensionFilter("PNG Images", "png");
+		
 		int map_num = 4;
 		Point[] startPoints = {
 				new Point(100,50),
+//				new Point(980, 205),
 				new Point(50,60),
 				new Point(73,68),
 				new Point(84,73),
-				new Point(92,100)};
+				new Point(92,100)};	
 		
-		Map map = new Map("D:\\Tests\\Maps\\p1" + map_num + ".png",startPoints[map_num-1]);
-		
+        chooser.setFileFilter(filter);
+        int returnVal = chooser.showOpenDialog(null);
+        if(returnVal == JFileChooser.APPROVE_OPTION) {
+            final String string = chooser.getSelectedFile().getPath();
+            final Matcher matcher = pattern.matcher(string);
+            
+            if (matcher.find()) {
+                map_num = Integer.parseInt(matcher.group(0))-10;
+            }else {
+            	System.exit(0);
+            }
+        }else {
+        	System.exit(0);
+        }
+        
+        Map map = new Map(chooser.getSelectedFile().getPath(),startPoints[map_num-1]);
+        
 		algo1 = new AutoAlgo1(map);
 		
 		Painter painter = new Painter(algo1);
@@ -299,10 +216,20 @@ public class SimulationWindow {
 	}
 	
 	public void updateInfo(int deltaTime) {
-		info_label.setText(algo1.drone.getInfoHTML());
-		info_label2.setText("<html>" + String.valueOf(algo1.counter) + " <BR>isRisky:" + String.valueOf(algo1.is_risky) + 
-				"<BR>" + String.valueOf(algo1.risky_dis) + "</html>");
+		String text_red = "<span style=\"color:red;font-weight:bold\">"+ String.valueOf(algo1.is_risky) +"</span>";
+		String text_green = "<span style=\"color:green;font-weight:bold\">"+ String.valueOf(algo1.is_risky) +"</span>";
 		
+		info_label.setText(algo1.drone.getInfoHTML());
+		
+		if (algo1.is_risky) {
+			info_label2.setText("<html><span>isRisky:&nbsp;" + text_red + "</span><br>"
+		+ "<span>Battery:&nbsp;<span style=\"color:blue;font-weight:bold\">" + battery_charge + "&#37;</span></span><br><span>Reason to stop:&nbsp;<span style=\"color:blue;font-weight:bold\">" +
+			reason_to_stop		+ "</span></span></html>");
+		}else {
+			info_label2.setText("<html><span>isRisky:&nbsp;" + text_green + "</span><br>" + 
+		"<span>Battery:&nbsp;<span style=\"color:blue;font-weight:bold\">" + battery_charge + "&#37;</span></span><br><span>Reason to stop:&nbsp;<span style=\"color:blue;font-weight:bold\">" +
+			reason_to_stop		+ "</span></span></html>");
+		}
 	}
 	
 	public void stopCPUS() {
@@ -311,5 +238,56 @@ public class SimulationWindow {
 	
 	public void resumseCPUS() {
 		CPU.stopAllCPUS();
+	}
+	
+	public void disabledButtons() {
+		returnBtn.setEnabled(false);
+		armBtn.setEnabled(false);
+	}
+	
+	public static void disabledAllButtons() {
+		returnBtn.setEnabled(false);
+		armBtn.setEnabled(false);
+		stopBtn.setEnabled(false);
+	}
+	
+	public static void enableButtons() {
+		if (!return_home){
+			returnBtn.setEnabled(true);
+			armBtn.setEnabled(true);	
+		}
+	}
+	
+	public void simpleTimer() {
+		timer = new Timer(1000, new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (toogleStop) {
+					second++;
+					battery_charge = 100 -  (int) Math.round(Double.valueOf(second) / WorldParams.one_percent_battery);
+					if ((second == WorldParams.max_flight_time/2) && !return_home) {
+						System.out.println("Start return");
+						returnBtn.setEnabled(false);
+						return_home = !return_home;
+						algo1.flightStop();
+						algo1.speedDown();
+						algo1.spinBy(180, true, new Func() {
+							@Override
+							public void method() {
+								algo1.calculateAngle();
+								algo1.flightStart();
+								algo1.speedUp();
+							}
+						});
+						  
+					}else if (second == WorldParams.max_flight_time){
+						disabledAllButtons();
+						Drone.ArmDisarm();
+						reason_to_stop = battery_reason;
+						timer.stop();
+					}
+				}
+			}
+		});
 	}
 }

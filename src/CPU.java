@@ -23,16 +23,16 @@ public class CPU{
 	        	try {
 					Thread.sleep(10);
 				} catch (InterruptedException e) {}
-	        	thread_run();
+	        		thread_run();
 	        }
-	      };
-        thread.start();
+	     };
+	     thread.start();
 
-		if(all_cpus == null) {
-			all_cpus = new ArrayList<>();
-		}
+	     if(all_cpus == null) {
+	    	 all_cpus = new ArrayList<>();
+	     }
 		
-		all_cpus.add(this);
+	     all_cpus.add(this);
 	}
 	
 	public static void stopAllCPUS() {
@@ -133,6 +133,4 @@ public class CPU{
 		}
 		return i;
 	}
-
-
 }

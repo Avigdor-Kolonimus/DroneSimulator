@@ -1,6 +1,7 @@
 import java.awt.Color;
 import java.awt.Graphics;
 import java.util.ArrayList;
+import java.util.Random;
 
 public class AutoAlgo1 {
 	
@@ -12,7 +13,6 @@ public class AutoAlgo1 {
 	
 	ArrayList<Point> points;
 	
-	
 	int isRotating;
 	ArrayList<Double> degrees_left;
 	ArrayList<Func> degrees_left_func;
@@ -22,15 +22,18 @@ public class AutoAlgo1 {
 	Graph mGraph = new Graph();
 	
 	CPU ai_cpu;
+	
 	public AutoAlgo1(Map realMap) {
 		degrees_left = new ArrayList<>();
 		degrees_left_func =  new ArrayList<>();
 		points = new ArrayList<Point>();
 		
 		drone = new Drone(realMap);
-		drone.addLidar(0);
-		drone.addLidar(90);
-		drone.addLidar(-90);
+		
+		drone.addLidar(0);      // front
+		drone.addLidar(90);		// right
+		drone.addLidar(-90);	// left
+		drone.addLidar(-180);	// back
 
 		
 		initMap();
@@ -55,7 +58,7 @@ public class AutoAlgo1 {
 		drone.play();
 		ai_cpu.play();
 	}
-
+	
 	
 	public void update(int deltaTime) {
 		updateVisited();
@@ -63,16 +66,17 @@ public class AutoAlgo1 {
 		
 		ai(deltaTime);
 		
-		
-		if(isRotating != 0) {
-			updateRotating(deltaTime);
+		if (!is_finish) {
+			if(isRotating != 0) {
+				updateRotating(deltaTime);
+			}
+			
+			if(isSpeedUp) {
+				drone.speedUp(deltaTime);
+			} else {
+				drone.slowDown(deltaTime);
+			}	
 		}
-		if(isSpeedUp) {
-			drone.speedUp(deltaTime);
-		} else {
-			drone.slowDown(deltaTime);
-		}
-		
 	}
 	
 	public void speedUp() {
@@ -90,7 +94,6 @@ public class AutoAlgo1 {
 		for(int i=0;i<drone.lidars.size();i++) {
 			Lidar lidar = drone.lidars.get(i);
 			double rotation = drone.getGyroRotation() + lidar.degrees;
-			//rotation = Drone.formatRotation(rotation);
 			for(int distanceInCM=0;distanceInCM < lidar.current_distance;distanceInCM++) {
 				Point p = Tools.getPointByDistance(fromPoint, rotation, distanceInCM);
 				setPixel(p.x,p.y,PixelState.explored);
@@ -99,7 +102,6 @@ public class AutoAlgo1 {
 			if(lidar.current_distance > 0 && lidar.current_distance < WorldParams.lidarLimit - WorldParams.lidarNoise) {
 				Point p = Tools.getPointByDistance(fromPoint, rotation, lidar.current_distance);
 				setPixel(p.x,p.y,PixelState.blocked);
-				//fineEdges((int)p.x,(int)p.y);
 			}
 		}
 	}
@@ -109,7 +111,6 @@ public class AutoAlgo1 {
 		Point fromPoint = new Point(dronePoint.x + droneStartingPoint.x,dronePoint.y + droneStartingPoint.y);
 		
 		setPixel(fromPoint.x,fromPoint.y,PixelState.visited);
-			
 	}
 	
 	public void setPixel(double x, double y,PixelState state) {
@@ -125,50 +126,12 @@ public class AutoAlgo1 {
 			map[xi][yi] = state; 
 		}
 	}
-	/*
-	
-	public void fineEdges(int x,int y) {
-		int radius = 6;
+	public PixelState getPixel(double x, double y) {
+		int xi = (int)x;
+		int yi = (int)y;
 		
-		for(int i=y-radius;i<y+radius;i++) {
-			for(int j=x-radius;j<x+radius;j++) {
-				if(Math.abs(y-i) <= 1 && Math.abs(x-j) <= 1) {
-					continue;
-				}
-				if(map[i][j] == PixelState.blocked) {
-					blockLine(x,y,j,i);
-				}
-			}
-		}
+		return map[xi][yi];
 	}
-	*/
-	/*
-	public void blockLine(int x0,int y0,int x1,int y1) {
-		if(x0 > x1) {
-			int tempX = x0;
-			int tempY = y0;
-			x0 = x1;
-			y0 = y1;
-			x1 = tempX;
-			y1 = tempY;
-		}
-		
-	     double deltax = x1 - x0;
-	     double deltay = y1 - y0;
-	     double deltaerr = Math.abs(deltay / deltax);    // Assume deltax != 0 (line is not vertical),
-	     double error = 0.0; // No error at start
-	     int y = y0;
-	     for (int x=x0;x<x1;x++) {
-	    	 setPixel(x,y,PixelState.blocked);
-	         error = error + deltaerr;
-	         if( 2*error >= deltax ) {
-                y = y + 1;
-                error=error - deltax;
-	        }
-	     }
-	
-	}
-	*/
 	
 	public void paintBlindMap(Graphics g) {
 		Color c = g.getColor();
@@ -212,188 +175,279 @@ public class AutoAlgo1 {
 		paintBlindMap(g);
 		paintPoints(g);
 		
-		drone.paint(g);
+		drone.paint(g);	
+	}
+	double risky_distance = 6;
+	public boolean checkCollision(double front, double right, double left, double back) {
+		// in gray zone		
+		if (front < risky_distance && right < risky_distance && 
+				left < risky_distance && back < risky_distance) {
+			return true;
+		}
 		
+		// front collision		
+		if (front < risky_distance && front > 0 ) {
+			return true;
+		}
 		
+		// front collision		
+		if (front < risky_distance && front > 0 ) {
+			return true;
+		}
+				
+		// right collision		
+		if (right < risky_distance && right > 0 ) {
+			return true;
+		}
+		
+		// left collision		
+		if (left < risky_distance && left > 0 ) {
+			return true;
+		}
+		
+		// back collision		
+		if (back < risky_distance && back > 0 ) {
+			return true;
+		}
+		return false;
 	}
 	
-	boolean is_init = true;
+	public float getAngle(Point dronePoint) {
+		Point target = getLastPoint();
+	    float angle = (float) Math.toDegrees(Math.atan2(target.y - dronePoint.y, target.x - dronePoint.x));
+
+	    if (angle < 0) {
+	        angle += 360;
+	    }
+	    return angle;
+	}
+	
 	double lastFrontLidarDis = 0;
-	boolean isRotateRight = false;
 	double changedRight = 0;
 	double changedLeft = 0;
-	boolean tryToEscape = false;
-	int leftOrRight = 1;
 	
-
 	double max_rotation_to_direction = 20;
-	boolean  is_finish = true;
+	static boolean is_finish = false;
 	boolean isLeftRightRotationEnable = true;
 	
-	
-	boolean is_risky = false;
 	int max_risky_distance = 150;
-	boolean try_to_escape = false;
-	double  risky_dis = 0;
 	int max_angle_risky = 10;
 	
-	boolean is_lidars_max = false;
-	
 	double save_point_after_seconds = 3;
-	
 	double max_distance_between_points = 100;
 	
+	boolean is_init = true;
 	boolean start_return_home = false;
+	boolean try_to_escape = false;
+	boolean is_risky = false;
+	boolean stop_rotate = false;
+	boolean point_saved = false;
+	public static boolean is_flight = false;
+	public static boolean calculate_angle = false;
 	
 	Point init_point;
+	Point stop_rotate_point;
+	int stop_rotate_distance = 0;
+	int left_right = 0;
 	public void ai(int deltaTime) {
-		if(!SimulationWindow.toogleAI) {
-			return;
-		}
-	
+		point_saved = false;
 		
+		// My initialization			
 		if(is_init) {
-			speedUp();
 			Point dronePoint = drone.getOpticalSensorLocation();
 			init_point = new Point(dronePoint);
 			points.add(dronePoint);
 			mGraph.addVertex(dronePoint);
 			is_init = false;
-		}
-		
-		if(isLeftRightRotationEnable) {
-			//doLeftRight();
-		}
-		
-		
-		Point dronePoint = drone.getOpticalSensorLocation();
-
-		
-		if(SimulationWindow.return_home) {
-			
-			if( Tools.getDistanceBetweenPoints(getLastPoint(), dronePoint) <  max_distance_between_points) {
-				if(points.size() <= 1 && Tools.getDistanceBetweenPoints(getLastPoint(), dronePoint) <  max_distance_between_points/5) {
-					speedDown();
-				} else {
-					removeLastPoint();
-				}
-			}
-		} else {
-			if( Tools.getDistanceBetweenPoints(getLastPoint(), dronePoint) >=  max_distance_between_points) {
-				points.add(dronePoint);
-				mGraph.addVertex(dronePoint);
-			}
-		}
-	
-		
-		
-		if(!is_risky) {
-			Lidar lidar = drone.lidars.get(0);
-			if(lidar.current_distance <= max_risky_distance ) {
-				is_risky = true;
-				risky_dis = lidar.current_distance;
-				
-			}
-			
-			
-			Lidar lidar1 = drone.lidars.get(1);
-			if(lidar1.current_distance <= max_risky_distance/3 ) {
-				is_risky = true;
-			}
-			
-			Lidar lidar2 = drone.lidars.get(2);
-			if(lidar2.current_distance <= max_risky_distance/3 ) {
-				is_risky = true;
-			}
-			
-		} else {
-			if(!try_to_escape) {
-				try_to_escape = true;
-				Lidar lidar1 = drone.lidars.get(1);
-				double a = lidar1.current_distance;
-				
-				Lidar lidar2 = drone.lidars.get(2);
-				double b = lidar2.current_distance;
-				
-				
-				
-				int spin_by = max_angle_risky;
-			
-			
-				
-				if(a > 270 && b > 270) {
-					is_lidars_max = true;
-					Point l1 = Tools.getPointByDistance(dronePoint, lidar1.degrees + drone.getGyroRotation(), lidar1.current_distance);
-					Point l2 = Tools.getPointByDistance(dronePoint, lidar2.degrees + drone.getGyroRotation(), lidar2.current_distance);
-					Point last_point = getAvgLastPoint();
-					double dis_to_lidar1 = Tools.getDistanceBetweenPoints(last_point,l1);
-					double dis_to_lidar2 = Tools.getDistanceBetweenPoints(last_point,l2);
-					
-					if(SimulationWindow.return_home) {
-						if( Tools.getDistanceBetweenPoints(getLastPoint(), dronePoint) <  max_distance_between_points) {
-							removeLastPoint();
-						}
-					} else {
-						if( Tools.getDistanceBetweenPoints(getLastPoint(), dronePoint) >=  max_distance_between_points) {
-							points.add(dronePoint);
-							mGraph.addVertex(dronePoint);
-						}
-					}
-					
-					spin_by = 90;
-					if(SimulationWindow.return_home) {
-						spin_by *= -1;
-					}
-					
-					
-					if(dis_to_lidar1 < dis_to_lidar2) {
+			point_saved = true;
 						
-						spin_by *= (-1 ); 
+			Lidar right = drone.lidars.get(1);
+			if(right.getSimulationDistance(deltaTime) > max_risky_distance/3 ) {
+				this.spinBy(90, true, new Func() { 
+					@Override
+					public void method() {
+						try_to_escape = false;
+						is_risky = false;
+						is_flight = true;
+						speedUp();
 					}
-				} else {
-					
-					
-					if(a < b ) {
-						spin_by *= (-1 ); 
+				});
+			}
+		}
+			
+			
+		// Algorithm
+		if (is_flight) {
+			Point dronePoint = drone.getOpticalSensorLocation();
+			
+			if (stop_rotate) {
+				double distance = Tools.getDistanceBetweenPoints(dronePoint, stop_rotate_point);
+				if (distance>stop_rotate_distance) {
+					stop_rotate = false;
+					stop_rotate_point = null;
+				}
+				return;
+			}
+				
+			double front_distance = drone.lidars.get(0).getSimulationDistance(deltaTime);
+			double right_distance = drone.lidars.get(1).getSimulationDistance(deltaTime);
+			double left_distance = drone.lidars.get(2).getSimulationDistance(deltaTime);
+			double back_distance = drone.lidars.get(3).getSimulationDistance(deltaTime);
+				
+			// collision				
+			if(!is_risky) {
+				if(front_distance <= max_risky_distance || right_distance <= max_risky_distance/3 || left_distance <= max_risky_distance/3) {
+					is_risky = true;
+
+					if (checkCollision(front_distance, right_distance, left_distance, back_distance)) {
+						speedDown();
+						flightStop();
+						SimulationWindow.disabledAllButtons();
+						SimulationWindow.reason_to_stop = SimulationWindow.crash_reason;
 					}
 				}
-				
-				
-				
-				spinBy(spin_by,true,new Func() { 
+					
+			}else {
+					
+				// Update graph							
+				if(SimulationWindow.return_home) {
+					if(Tools.getDistanceBetweenPoints(getLastPoint(), dronePoint) <  max_distance_between_points/6) {
+						removeLastPoint();
+						if (points.size() == 0) {
+							speedDown();
+							SimulationWindow.disabledAllButtons();
+							SimulationWindow.reason_to_stop = SimulationWindow.target_reason;
+							Drone.ArmDisarm();
+						}
+						calculate_angle = true;
+					}
+				} else {
+					if( Tools.getDistanceBetweenPoints(getLastPoint(), dronePoint) >=  max_distance_between_points) {
+						points.add(dronePoint);
+						mGraph.addVertex(dronePoint);
+						point_saved = true;
+						if (front_distance > 298 && right_distance > 298 && left_distance > 298 && back_distance > 298) {
+							Random ran = new Random();
+							int spin_by = ran.nextInt(720) - 360;
+//							System.out.println("random degree spin_by= "+ spin_by);
+							speedDown();
+							spinBy(spin_by, false, new Func() { 
+								@Override
+								public void method() {
+									try_to_escape = false;
+									is_risky = false;
+									speedUp();
+								}
+							});
+							return ;
+						}
+					}
+				}
+					
+				// direction					
+				if(!try_to_escape) {
+					try_to_escape = true;
+					int spin_by = max_angle_risky;
+						
+					// return home
+					if(SimulationWindow.return_home) {
+						if (calculate_angle) {
+							double angle = getAngle(dronePoint);
+							double curr =  drone.getGyroRotation();
+							spin_by = (int) (angle - curr);
+							calculate_angle = false;
+//							System.out.println("angle= "+ angle + "; curr= "+ curr + "; spin_by= "+ spin_by);
+						}else {
+							if (front_distance > 0 && front_distance < max_risky_distance/2) {
+								double angle = getAngle(dronePoint);
+								double curr =  drone.getGyroRotation();
+								spin_by = (int) (angle - curr);
+							}else {
+								if(left_right == 0) {
+									spin_by *= (-1);
+									left_right = 1;
+								}else {
+									left_right = 0;
+								}	
+							}	
+						}		
+					}else {
+						if (front_distance > 0 && front_distance < max_risky_distance/2) {
+							stop_rotate_point = new Point(dronePoint);
+							speedDown();
+							stop_rotate = true;
+							int degree = 0;
+							if (back_distance > max_risky_distance){
+								degree = -180;	
+							}
+							if (left_distance > max_risky_distance) {
+								left_right = 1;
+								degree = -90;		
+							}
+							if (right_distance > max_risky_distance) {
+								left_right = 0;
+								degree = 90;
+							}
+							if (!point_saved) {
+								points.add(dronePoint);
+								mGraph.addVertex(dronePoint);
+							}
+							this.spinBy(degree, false, new Func() { 
+								@Override
+								public void method() {
+									try_to_escape = false;
+									is_risky = false;
+									speedUp();
+								}
+							});
+							return;
+						}
+						if (right_distance <= max_risky_distance/3 && right_distance > 0 && left_distance > max_risky_distance/4){
+							left_right = 1;
+							spin_by *= (-1);
+						}else {
+							if (left_distance <= max_risky_distance/3 && left_distance > 0) {
+								left_right = 0;
+							}else {
+								if(left_right == 0) {
+									spin_by *= (-1);
+									left_right = 1;
+								}else {
+									left_right = 0;
+								}	
+							}	
+						}
+					}
+					spinBy(spin_by, false, new Func() { 
 						@Override
 						public void method() {
 							try_to_escape = false;
 							is_risky = false;
 						}
-				});
-			}
+					});		
+				}
+			}	
 		}
-			
-		//}
 	}
 	
-	int counter = 0;
 	
-	public void doLeftRight() {
-		if(is_finish) {
-			leftOrRight *= -1;
-			counter++;
-			is_finish = false;
-			
-			spinBy(max_rotation_to_direction*leftOrRight,false,new Func() {
-				@Override
-				public void method() {
-					is_finish = true;
-				}
-			});
-		}
+	
+	public void flightStart() {
+		is_flight = true;
+	}
+	
+	public void flightStop() {
+		is_flight = false;
+	}
+	
+	public void calculateAngle() {
+		calculate_angle = true;
 	}
 	
 	
 	double lastGyroRotation = 0;
+	
 	public void updateRotating(int deltaTime) {
-		
 		if(degrees_left.size() == 0) {
 			return;
 		}
@@ -408,19 +462,18 @@ public class AutoAlgo1 {
 		double just_rotated = 0;
 		
 		if(isLeft) {
-			
 			just_rotated = curr - lastGyroRotation;
 			if(just_rotated > 0) {
 				just_rotated = -(360 - just_rotated);
 			}
+			drone.rollLeft();
 		} else {
 			just_rotated = curr - lastGyroRotation;
 			if(just_rotated < 0) {
 				just_rotated = 360 + just_rotated;
 			}
+			drone.rollRight();
 		}
-		
-	
 		 
 		lastGyroRotation = curr;
 		degrees_left_to_rotate-=just_rotated;
@@ -445,7 +498,6 @@ public class AutoAlgo1 {
 		
 		int direction = (int)(degrees_left_to_rotate / Math.abs(degrees_left_to_rotate));
 		drone.rotateLeft(deltaTime * direction);
-		
 	}
 	
 	public void spinBy(double degrees,boolean isFirst,Func func) {
@@ -453,14 +505,12 @@ public class AutoAlgo1 {
 		if(isFirst) {
 			degrees_left.add(0,degrees);
 			degrees_left_func.add(0,func);
-		
-			
 		} else {
 			degrees_left.add(degrees);
 			degrees_left_func.add(func);
 		}
 		
-		isRotating =1;
+		isRotating = 1;
 	}
 	
 	public void spinBy(double degrees,boolean isFirst) {
@@ -468,14 +518,12 @@ public class AutoAlgo1 {
 		if(isFirst) {
 			degrees_left.add(0,degrees);
 			degrees_left_func.add(0,null);
-		
-			
 		} else {
 			degrees_left.add(degrees);
 			degrees_left_func.add(null);
 		}
 		
-		isRotating =1;
+		isRotating = 1;
 	}
 	
 	public void spinBy(double degrees) {
@@ -502,8 +550,7 @@ public class AutoAlgo1 {
 		
 		return points.remove(points.size()-1);
 	}
-	
-	
+		
 	public Point getAvgLastPoint() {
 		if(points.size() < 2) {
 			return init_point;
@@ -513,6 +560,4 @@ public class AutoAlgo1 {
 		Point p2 = points.get(points.size()-2);
 		return new Point((p1.x + p2.x) /2, (p1.y + p2.y) /2);
 	}
-	
-
 }

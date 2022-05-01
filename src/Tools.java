@@ -38,11 +38,9 @@ public class Tools {
 		double y1 = from.y - to.y;
 		double x1 = from.x - to.x;
 		
-		
-		
 		double radians = Math.atan(y1/ x1);
+		double rotation = radians * 180 / Math.PI;
 		
-		double rotation = radians * 180 / Math.PI; 
 		return rotation;
 	}
 	
@@ -50,8 +48,7 @@ public class Tools {
 	public static double getDistanceBetweenPoints(Point from, Point to) {
 		double x1 = (from.x - to.x)*(from.x - to.x);
 		double y1 = (from.y-to.y)*(from.y-to.y);
-		return Math.sqrt(x1+y1);
 		
+		return Math.sqrt(x1+y1);
 	}
-	
 }

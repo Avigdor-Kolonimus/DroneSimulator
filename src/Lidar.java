@@ -38,8 +38,6 @@ public class Lidar{
 			distanceInCM += (int)ran.nextInt(WorldParams.lidarNoise*2) - WorldParams.lidarNoise; // +- 5 CM to the final calc
 		}
 		
-		
-		
 		this.current_distance = distanceInCM; // store it for instance get
 		return distanceInCM;
 	}
@@ -50,11 +48,7 @@ public class Lidar{
 		double fromRotation = drone.getRotation()+degrees;
 		Point to = Tools.getPointByDistance(actualPointToShoot, fromRotation, this.current_distance);
 
-		
-	
 		g.drawLine((int)actualPointToShoot.x,(int)actualPointToShoot.y, (int)to.x, (int)to.y);
 	}
-	
-
 	
 }
